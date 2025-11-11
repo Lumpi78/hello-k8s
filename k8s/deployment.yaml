@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-k8s-deployment
+spec:
+  replicas: 2 # Wir starten 2 Instanzen für Redundanz
+  selector:
+    matchLabels:
+      app: hello-k8s # Definiert, welche Pods zu diesem Deployment gehören
+  template: # Dies ist die Vorlage (Blueprint) für die Pods
+    metadata:
+      labels:
+        app: hello-k8s # Das Label, das vom 'selector' gefunden wird
+    spec:
+      containers:
+      - name: hello-k8s-container
+        image: hello-k8s-app:v1.0.0 # Das Image, das wir in Schritt 5.1 geladen haben
+        
+        # WICHTIG: Diese Policy weist K8s an, das Image nur dann
+        # aus der Ferne zu laden, wenn es nicht bereits lokal vorhanden ist.
+        # Da wir es mit 'kind load' geladen haben, wird die lokale Version verwendet.
+        imagePullPolicy: IfNotPresent 
+        
+        ports:
+        - containerPort: 3000 # Der Port, den app.js bereitstellt

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-k8s-service
+spec:
+  # NodePort macht den Service auf einem statischen Port auf *jedem*
+  # Cluster-Node (in unserem Fall dem kind-Container) erreichbar.
+  type: NodePort 
+  selector:
+    app: hello-k8s # Leitet Traffic an alle Pods mit diesem Label weiter
+  ports:
+    - protocol: TCP
+      port: 80 # Interner Port des Services (innerhalb des Clusters)
+      targetPort: 3000 # Port auf den Pods (wo app.js lauscht)
+      
+      # Optional: Wir können einen festen NodePort festlegen,
+      # was die Konfiguration in Schritt 5.3 vereinfacht.
+      nodePort: 30001 

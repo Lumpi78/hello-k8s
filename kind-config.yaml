@@ -2,4 +2,10 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
-
+- role: control-plane
+  extraPortMappings:
+  # Leitet Traffic von localhost:8081 (Host) 
+  # auf Port 30001 (Container/Node) weiter.
+  - containerPort: 30001 
+    hostPort: 8081
+    protocol: TCP

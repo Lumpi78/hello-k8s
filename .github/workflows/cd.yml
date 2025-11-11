@@ -1,0 +1,52 @@
+name: CD - Deploy to Kind Cluster
+on:
+  workflow_run:
+    # Wird nur ausgelöst, wenn der CI-Workflow...
+    workflows:
+    #...erfolgreich abgeschlossen wurde...
+    types:
+      - completed
+    #...und auf dem main-Branch lief.
+    branches:
+      - main
+
+jobs:
+  deploy:
+    # Stellt sicher, dass wir nicht bei fehlgeschlagenen CI-Läufen deployen
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    # KRITISCH: Muss auf dem Runner laufen, der Zugriff 
+    # auf das Docker-Netzwerk des kind-Clusters hat.
+    runs-on: self-hosted 
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          # Dekodiert das Secret und schreibt es in die kubeconfig-Datei
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Verify Kubectl connection
+        run: kubectl cluster-info # Testet die Verbindung zum lokalen Kind-Cluster
+
+      - name: Deploy to Kubernetes
+        run: |
+          # Extrahiert den Git-Commit-SHA aus dem CI-Lauf
+          IMAGE_TAG=${{ github.event.workflow_run.head_sha }}
+          IMAGE_TAG_SHORT=$(echo $IMAGE_TAG | cut -c1-7)
+          
+          # Aktualisiert das Deployment, um ein Rolling Update auszulösen
+          # Dies ist der eleganteste Weg, ohne YAML-Dateien zu patchen.
+          kubectl set image deployment/hello-k8s-deployment \
+            hello-k8s-container=ghcr.io/${{ github.repository }}:${IMAGE_TAG_SHORT} \
+            --record
+
+      - name: Verify deployment
+        run: |
+          # Wartet, bis das Rolling Update abgeschlossen ist
+          kubectl rollout status deployment/hello-k8s-deployment
+          echo "Deployment successful!"
