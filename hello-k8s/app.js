@@ -4,7 +4,7 @@ const port = 3000;
 
 // Standard-Endpunkt
 app.get('/', (req, res) => {
-  res.send('Hello from GitHub Actions new2!');
+  res.send('Hello from GitHub Actions new3!');
 });
 
 // /health Endpunkt 
